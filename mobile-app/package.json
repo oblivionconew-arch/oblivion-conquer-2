@@ -11,7 +11,7 @@
     "prepare:android": "npm run cap:init && npm run cap:sync && npm run cap:assets && npm run cap:overrides"
   },
   "dependencies": {
-    "@capacitor-community/keep-awake": "^6.0.0",
+    "@capacitor-community/keep-awake": "^5.0.0",
     "@capacitor/android": "^6.1.2",
     "@capacitor/core": "^6.1.2",
     "@capacitor/splash-screen": "^6.0.2",

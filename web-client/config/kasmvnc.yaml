@@ -10,9 +10,6 @@ encoding:
   rect_encoding_mode:
     min_quality: 6
     max_quality: 9
-    consider_lossless_video: false
-  video_scaling_mode:
-    scaling_method: nearest
 
 network:
   protocol: http

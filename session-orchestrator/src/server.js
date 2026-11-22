@@ -1,4 +1,5 @@
 const http = require('http');
+const net = require('net');
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -292,34 +293,41 @@ server.on('upgrade', (req, socket, head) => {
   });
 
   // Remove o prefixo /s/<sessionId> e limpa query ?token= ao encaminhar para KasmVNC
-  const subPath = (match[2] || '/').split('?')[0];
-  req.url = subPath || '/';
+  const subPath = (match[2] || '/websockify').split('?')[0] || '/websockify';
 
-  // KasmVNC (C++) exige cabecalhos HTTP com capitalizacao padrao (ex.: "Host:", nao "host:")
-  const casedHeaders = {};
-  const headerMap = {
-    host: 'Host',
-    upgrade: 'Upgrade',
-    connection: 'Connection',
-    'sec-websocket-key': 'Sec-WebSocket-Key',
-    'sec-websocket-version': 'Sec-WebSocket-Version',
-    'sec-websocket-protocol': 'Sec-WebSocket-Protocol',
-    'sec-websocket-extensions': 'Sec-WebSocket-Extensions',
-    origin: 'Origin',
-    'user-agent': 'User-Agent',
-  };
-  for (const [k, v] of Object.entries(req.headers)) {
-    const mapped = headerMap[k.toLowerCase()];
-    if (mapped) {
-      casedHeaders[mapped] = v;
+  // Tunel TCP direto para KasmVNC garantindo cabecalhos HTTP/1.1 com capitalizacao padrao ("Host:")
+  const upstream = net.connect(meta.containerPort, meta.containerIp, () => {
+    const lines = [
+      `GET ${subPath} HTTP/1.1`,
+      `Host: ${meta.containerIp}:${meta.containerPort}`,
+      `Upgrade: websocket`,
+      `Connection: Upgrade`,
+      `Sec-WebSocket-Key: ${req.headers['sec-websocket-key'] || ''}`,
+      `Sec-WebSocket-Version: ${req.headers['sec-websocket-version'] || '13'}`,
+    ];
+    if (req.headers['sec-websocket-protocol']) {
+      lines.push(`Sec-WebSocket-Protocol: ${req.headers['sec-websocket-protocol']}`);
     }
-  }
-  casedHeaders.Host = `${meta.containerIp}:${meta.containerPort}`;
-  req.headers = casedHeaders;
-
-  proxy.ws(req, socket, head, {
-    target: `http://${meta.containerIp}:${meta.containerPort}`,
+    if (req.headers['sec-websocket-extensions']) {
+      lines.push(`Sec-WebSocket-Extensions: ${req.headers['sec-websocket-extensions']}`);
+    }
+    if (req.headers.origin) {
+      lines.push(`Origin: ${req.headers.origin}`);
+    }
+    lines.push('', '');
+    upstream.write(lines.join('\r\n'));
+    if (head && head.length) upstream.write(head);
+    socket.pipe(upstream);
+    upstream.pipe(socket);
   });
+
+  upstream.on('error', (err) => {
+    console.warn('[WS] Erro upstream KasmVNC:', err.message);
+    socket.destroy();
+  });
+  socket.on('error', () => upstream.destroy());
+  socket.on('close', () => upstream.destroy());
+  upstream.on('close', () => socket.destroy());
 });
 
 startIdleReaper();

@@ -38,7 +38,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
     VNC_PORT=6901 \
     RESOLUTION=1024x768 \
     WINEARCH=win32 \
-    WINEPREFIX=/tmp/wine-conquer \
+    WINEPREFIX=/home/conquer/.wine \
     WINEDEBUG=-all \
     GAME_SERVER_HOST=game.oblivionco.com.br \
     GAME_AUTH_PORT=9958 \
@@ -84,6 +84,11 @@ RUN chmod +x /usr/local/bin/entrypoint.sh /usr/local/bin/launch-conquer.sh && \
 
 USER conquer
 WORKDIR /home/conquer
+
+# Pre-inicializa prefixo Wine32 (win32) uma unica vez na imagem para boot instantaneo por jogador
+RUN mkdir -p /home/conquer/.wine && \
+    xvfb-run -a wineboot --init && \
+    wineserver -w || true
 
 EXPOSE 6901
 

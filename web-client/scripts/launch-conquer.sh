@@ -63,8 +63,9 @@ EOF
 
 # Inicializa Wine32 prefix leve
 export WINEARCH=win32
-export WINEPREFIX="${WINEPREFIX:-/tmp/wine-conquer}"
+export WINEPREFIX="${WINEPREFIX:-/home/conquer/.wine}"
 export WINEDEBUG=-all
+mkdir -p "${WINEPREFIX}"
 
 if [[ ! -d "${WINEPREFIX}/drive_c" ]]; then
     wineboot --init || true

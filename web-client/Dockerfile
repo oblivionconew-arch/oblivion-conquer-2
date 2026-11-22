@@ -100,8 +100,7 @@ RUN apt-get update && \
 
 USER conquer
 ENV LIBGL_ALWAYS_SOFTWARE=1 \
-    GALLIUM_DRIVER=llvmpipe \
-    MESA_GL_VERSION_OVERRIDE=3.3
+    GALLIUM_DRIVER=llvmpipe
 
 RUN xvfb-run -a wine reg add "HKCU\\Software\\Wine\\Direct3D" /v renderer /t REG_SZ /d gl /f && \
     xvfb-run -a wine reg add "HKCU\\Software\\Wine\\Direct3D" /v VideoMemorySize /t REG_SZ /d 512 /f && \

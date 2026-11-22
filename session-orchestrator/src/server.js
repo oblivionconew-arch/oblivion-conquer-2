@@ -25,10 +25,15 @@ const { startIdleReaper } = require('./reaper');
 
 const PORT = Number(process.env.PORT || 3000);
 const PUBLIC_STREAM_BASE_URL = (process.env.PUBLIC_STREAM_BASE_URL || 'https://stream.oblivionco.com.br').replace(/\/$/, '');
-const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'https://oblivionco.com.br,https://www.oblivionco.com.br')
-  .split(',')
-  .map((s) => s.trim())
-  .filter(Boolean);
+const ALLOWED_ORIGINS = Array.from(
+  new Set([
+    ...(process.env.ALLOWED_ORIGINS || 'https://oblivionco.com.br,https://www.oblivionco.com.br')
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean),
+    PUBLIC_STREAM_BASE_URL,
+  ])
+);
 
 const app = express();
 app.set('trust proxy', 1);
@@ -146,7 +151,8 @@ app.post('/api/sessions/start', requireAuth, async (req, res) => {
   try {
     const meta = await createOrReuseSession(req.user.username);
     const streamToken = issueStreamToken(meta.sessionId, meta.username);
-    const streamPath = `/s/${meta.sessionId}/?token=${encodeURIComponent(streamToken)}`;
+    const wsPath = `s/${meta.sessionId}/websockify?token=${encodeURIComponent(streamToken)}`;
+    const streamPath = `/s/${meta.sessionId}/?token=${encodeURIComponent(streamToken)}&autoconnect=true&resize=scale&path=${encodeURIComponent(wsPath)}`;
     const streamUrl = `${PUBLIC_STREAM_BASE_URL}${streamPath}`;
 
     res.json({
@@ -210,6 +216,15 @@ function extractCookie(cookieHeader, name) {
   return null;
 }
 
+function extractRefererToken(refererHeader) {
+  if (!refererHeader) return null;
+  try {
+    return new URL(refererHeader).searchParams.get('token');
+  } catch (_) {
+    return null;
+  }
+}
+
 app.use('/s/:sessionId', (req, res) => {
   const { sessionId } = req.params;
   const meta = sessions.get(sessionId);
@@ -219,7 +234,8 @@ app.use('/s/:sessionId', (req, res) => {
 
   const queryToken = req.query.token;
   const cookieToken = extractCookie(req.headers.cookie, `conquer_st_${sessionId}`);
-  const token = queryToken || cookieToken;
+  const refToken = extractRefererToken(req.headers.referer);
+  const token = queryToken || cookieToken || refToken;
 
   if (!verifyStreamToken(token, sessionId)) {
     return res.status(401).send('Token de sessao invalido ou expirado.');
@@ -228,7 +244,7 @@ app.use('/s/:sessionId', (req, res) => {
   if (queryToken) {
     res.setHeader(
       'Set-Cookie',
-      `conquer_st_${sessionId}=${encodeURIComponent(queryToken)}; Path=/s/${sessionId}; HttpOnly; Secure; SameSite=None`
+      `conquer_st_${sessionId}=${encodeURIComponent(queryToken)}; Path=/s/${sessionId}; HttpOnly; Secure; SameSite=None; Partitioned`
     );
   }
 
@@ -244,6 +260,7 @@ const server = http.createServer(app);
 server.on('upgrade', (req, socket, head) => {
   const match = /^\/s\/([a-f0-9]+)(\/.*)?$/i.exec(req.url || '');
   if (!match) {
+    console.warn('[WS] Rejeitado URL fora de /s/:', req.url);
     socket.destroy();
     return;
   }
@@ -251,13 +268,18 @@ server.on('upgrade', (req, socket, head) => {
   const sessionId = match[1];
   const meta = sessions.get(sessionId);
   if (!meta) {
+    console.warn('[WS] Sessao nao encontrada:', sessionId);
     socket.destroy();
     return;
   }
 
   const urlObj = new URL(req.url, 'http://localhost');
-  const token = urlObj.searchParams.get('token') || extractCookie(req.headers.cookie, `conquer_st_${sessionId}`);
+  const token =
+    urlObj.searchParams.get('token') ||
+    extractCookie(req.headers.cookie, `conquer_st_${sessionId}`) ||
+    extractRefererToken(req.headers.referer);
   if (!verifyStreamToken(token, sessionId)) {
+    console.warn('[WS] Token invalido/ausente para sessao:', sessionId, 'url:', req.url);
     socket.destroy();
     return;
   }

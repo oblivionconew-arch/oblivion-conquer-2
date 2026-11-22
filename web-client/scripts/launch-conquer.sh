@@ -57,14 +57,18 @@ fi
 
 cat > "${CLIENT_RUN}/ini/GameSetUp.ini" <<EOF
 [ScreenMode]
+ScrWidth=1024
+ScrHeight=768
+FullScrType=1
 ScreenModeRecord=2
-FullScrType=0
 EOF
 
-# Inicializa Wine32 prefix leve
+# Inicializa Wine32 prefix leve + Mesa llvmpipe (Direct3D 8/9 via OpenGL software)
 export WINEARCH=win32
 export WINEPREFIX="${WINEPREFIX:-/home/conquer/.wine}"
 export WINEDEBUG=-all
+export LIBGL_ALWAYS_SOFTWARE=1
+export GALLIUM_DRIVER=llvmpipe
 mkdir -p "${WINEPREFIX}"
 
 if [[ ! -d "${WINEPREFIX}/drive_c" ]]; then

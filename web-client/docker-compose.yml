@@ -28,7 +28,7 @@ services:
       PORT: "3000"
       NODE_ENV: "production"
       PUBLIC_STREAM_BASE_URL: "${PUBLIC_STREAM_BASE_URL:-https://stream.oblivionco.com.br}"
-      ALLOWED_ORIGINS: "${ALLOWED_ORIGINS:-https://oblivionco.com.br,https://www.oblivionco.com.br,http://localhost:8080,capacitor://localhost,https://localhost}"
+      ALLOWED_ORIGINS: "${ALLOWED_ORIGINS:-https://oblivionco.com.br,https://www.oblivionco.com.br,https://oblivionco.pages.dev,http://localhost:8080,capacitor://localhost,https://localhost}"
       JWT_SECRET: "${JWT_SECRET:-TROQUE_POR_SEGREDO_FORTE_64_CHARS}"
       SESSION_IMAGE: "${SESSION_IMAGE:-oblivionco/conquer-web-client:latest}"
       SESSION_ENGINE: "${SESSION_ENGINE:-kasmvnc}"

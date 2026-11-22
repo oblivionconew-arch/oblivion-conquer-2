@@ -13,7 +13,7 @@ if [[ -d "${CLIENT_RO}" ]]; then
     for item in "${CLIENT_RO}"/*; do
         base="$(basename "${item}")"
         case "${base}" in
-            play.exe|CSV3Hook.dll|CSV3Hook.dll.lnk|conquer_hook.ini|csv3config.ini|PlayLauncher.exe|ConquerHook.dll)
+            play.exe|CSV3Hook.dll|CSV3Hook.dll.lnk|Ntyr.dll|SeW.dll|OblivionCo.exe|conquer_hook.ini|csv3config.ini|PlayLauncher.exe|ConquerHook.dll)
                 continue
                 ;;
         esac

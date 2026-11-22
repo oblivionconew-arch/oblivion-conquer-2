@@ -7,6 +7,8 @@ const httpProxy = require('http-proxy');
 
 const {
   authenticateGameAccount,
+  registerGameAccount,
+  getTopRanking,
   issueUserToken,
   issueStreamToken,
   verifyAnyAuthToken,
@@ -92,6 +94,38 @@ app.get('/api/sessions/status', (req, res) => {
     available: Math.max(0, CONFIG.maxConcurrentSessions - sessions.size),
     engine: CONFIG.engine,
   });
+});
+
+app.post('/api/auth/register', authLimiter, async (req, res) => {
+  try {
+    const { username, password, email } = req.body || {};
+    const clientIp = req.ip || req.socket.remoteAddress || '0.0.0.0';
+    const created = await registerGameAccount(
+      String(username || '').trim(),
+      String(password || '').trim(),
+      email,
+      clientIp
+    );
+    res.status(201).json({
+      ok: true,
+      username: created.username,
+      message: 'Conta criada com sucesso no servidor! Voce ja pode jogar.',
+    });
+  } catch (err) {
+    res.status(err.statusCode || 500).json({
+      ok: false,
+      message: err.message || 'Erro ao criar conta no banco de dados.',
+    });
+  }
+});
+
+app.get('/api/ranking', async (req, res) => {
+  try {
+    const rows = await getTopRanking(req.query.limit || 10);
+    res.json({ ok: true, ranking: rows });
+  } catch (err) {
+    res.status(503).json({ ok: false, ranking: [], message: 'Ranking indisponivel no momento.' });
+  }
 });
 
 app.post('/api/auth/login', authLimiter, async (req, res) => {

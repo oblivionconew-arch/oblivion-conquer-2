@@ -54,6 +54,59 @@ async function authenticateGameAccount(username, password) {
   return { username: String(acc.Username).trim(), state: Number(acc.State), source: 'mysql' };
 }
 
+/**
+ * Cria uma nova conta diretamente na tabela `accounts` do Conquer Online 2.0 (MySQL/MariaDB)
+ */
+async function registerGameAccount(username, password, email = '', ip = '0.0.0.0') {
+  if (!username || !/^[A-Za-z0-9_]{4,16}$/.test(username)) {
+    const err = new Error('Usuario invalido: use de 4 a 16 letras, numeros ou _.');
+    err.statusCode = 400;
+    throw err;
+  }
+  if (!password || password.length < 4 || password.length > 16) {
+    const err = new Error('Senha invalida: use entre 4 e 16 caracteres.');
+    err.statusCode = 400;
+    throw err;
+  }
+  const cleanEmail = String(email || '').trim().slice(0, 100);
+  const cleanIp = String(ip || '0.0.0.0').replace(/^::ffff:/, '').slice(0, 15);
+
+  const pool = getMysqlPool();
+  if (!pool) {
+    const err = new Error('Banco de dados MySQL do servidor ainda nao esta conectado.');
+    err.statusCode = 503;
+    throw err;
+  }
+
+  const [existing] = await pool.execute(
+    'SELECT Username FROM accounts WHERE Username = ? LIMIT 1',
+    [username]
+  );
+  if (existing && existing.length > 0) {
+    const err = new Error('Este nome de usuario ja esta em uso! Escolha outro.');
+    err.statusCode = 409;
+    throw err;
+  }
+
+  // State = 2 (Player padrao na source Oblivion)
+  await pool.execute(
+    "INSERT INTO accounts (Username, Password, State, Email, IP, EntityID, lastvote) VALUES (?, ?, 2, ?, ?, 0, '')",
+    [username, password, cleanEmail, cleanIp]
+  );
+
+  return { username, created: true };
+}
+
+async function getTopRanking(limit = 10) {
+  const pool = getMysqlPool();
+  if (!pool) return [];
+  const safeLimit = Math.max(1, Math.min(50, Number(limit) || 10));
+  const [rows] = await pool.query(
+    `SELECT Name, Level, Reborn, Class, ConquerPoints FROM entities ORDER BY Reborn DESC, Level DESC LIMIT ${safeLimit}`
+  );
+  return rows || [];
+}
+
 function issueUserToken(payload) {
   return jwt.sign(payload, JWT_SECRET, { expiresIn: '12h' });
 }
@@ -101,6 +154,8 @@ function verifyStreamToken(token, expectedSessionId) {
 
 module.exports = {
   authenticateGameAccount,
+  registerGameAccount,
+  getTopRanking,
   issueUserToken,
   issueStreamToken,
   verifyAnyAuthToken,

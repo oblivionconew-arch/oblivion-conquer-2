@@ -200,21 +200,49 @@
   </footer>
 
   <script>
+    const API_BASE =
+      window.CONQUER_STREAM_API ||
+      (location.hostname === 'localhost' || location.hostname === '127.0.0.1'
+        ? 'http://localhost:3000'
+        : 'https://stream.oblivionco.com.br');
+
     const form = document.getElementById('registerForm');
     const msg = document.getElementById('formMsg');
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       msg.style.color = '#f5b942';
-      msg.textContent = 'Processando cadastro...';
+      msg.textContent = 'Criando conta no banco SQL do servidor...';
+
+      const payload = {
+        username: document.getElementById('username').value.trim(),
+        password: document.getElementById('password').value,
+        email: document.getElementById('email').value.trim(),
+      };
+
       try {
-        const res = await fetch(form.action, { method: 'POST', body: new FormData(form) });
+        const res = await fetch(`${API_BASE}/api/auth/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
         const data = await res.json();
         msg.style.color = data.ok ? '#4ade80' : '#f87171';
-        msg.textContent = data.message || 'Resposta inesperada do servidor.';
+        msg.innerHTML = data.ok
+          ? `${data.message} <a href="play.html" style="color:#f5b942;text-decoration:underline;margin-left:8px;">Entrar no Jogo →</a>`
+          : (data.message || 'Não foi possível criar a conta.');
         if (data.ok) form.reset();
       } catch (err) {
-        msg.style.color = '#f87171';
-        msg.textContent = 'Backend PHP (register.php) nao configurado nesta hospedagem estatica. Hospede com PHP+MySQL ou configure a URL do register.php.';
+        // Fallback opcional para hospedagem PHP (register.php)
+        try {
+          const phpRes = await fetch('register.php', { method: 'POST', body: new FormData(form) });
+          const phpData = await phpRes.json();
+          msg.style.color = phpData.ok ? '#4ade80' : '#f87171';
+          msg.textContent = phpData.message || 'Resposta inesperada.';
+          if (phpData.ok) form.reset();
+        } catch (_) {
+          msg.style.color = '#f87171';
+          msg.textContent = 'Servidor SQL (stream.oblivionco.com.br) ainda offline — ligue a VPS do jogo para ativar o cadastro automático.';
+        }
       }
     });
   </script>

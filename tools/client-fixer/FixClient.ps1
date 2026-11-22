@@ -49,6 +49,8 @@ $junk = @(
     "play.exe",
     "CSV3Hook.dll",
     "CSV3Hook.dll.lnk",
+    "Ntyr.dll",
+    "SeW.dll",
     "OblivionCo.exe",
     "AutoPatch.exe",
     "AutoPatchRestart.exe",

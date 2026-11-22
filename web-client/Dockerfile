@@ -90,6 +90,24 @@ RUN mkdir -p /home/conquer/.wine && \
     xvfb-run -a wineboot --init && \
     wineserver -w || true
 
+# Instala drivers Mesa OpenGL 32-bit (software llvmpipe) para Direct3D 8/9 do Conquer sem GPU fisica
+USER root
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+      libgl1-mesa-dri:i386 libglx-mesa0:i386 libgl1:i386 libglu1-mesa:i386 \
+      libgl1-mesa-dri libglx-mesa0 libgl1 \
+    && rm -rf /var/lib/apt/lists/*
+
+USER conquer
+ENV LIBGL_ALWAYS_SOFTWARE=1 \
+    GALLIUM_DRIVER=llvmpipe \
+    MESA_GL_VERSION_OVERRIDE=3.3
+
+RUN xvfb-run -a wine reg add "HKCU\\Software\\Wine\\Direct3D" /v renderer /t REG_SZ /d gl /f && \
+    xvfb-run -a wine reg add "HKCU\\Software\\Wine\\Direct3D" /v VideoMemorySize /t REG_SZ /d 512 /f && \
+    xvfb-run -a wine reg add "HKCU\\Software\\Wine\\Direct3D" /v UseGLSL /t REG_SZ /d enabled /f && \
+    wineserver -w || true
+
 EXPOSE 6901
 
 HEALTHCHECK --interval=5s --timeout=3s --start-period=20s --retries=6 \

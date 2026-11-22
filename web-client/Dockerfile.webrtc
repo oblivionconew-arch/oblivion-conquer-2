@@ -1,0 +1,75 @@
+# ==============================================================================
+# Perfil Alternativo WebRTC (Selkies-GStreamer + Xvfb + Wine32 + PulseAudio)
+# Recomendado para VPS com GPU ou portas UDP/TURN dedicadas para latencia minima
+# ==============================================================================
+FROM ubuntu:22.04 AS hook-builder
+
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    g++-mingw-w64-i686 \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /src
+COPY client-hook/ ./client-hook/
+
+RUN mkdir -p /out && \
+    i686-w64-mingw32-g++ -m32 -shared -std=c++17 -O2 -DNDEBUG \
+      -D_WIN32_WINNT=0x0601 -static -static-libgcc -static-libstdc++ -s -Wl,--kill-at \
+      client-hook/src/dllmain.cpp client-hook/src/config.cpp client-hook/src/iat_hook.cpp \
+      -lws2_32 -lshell32 -luser32 -o /out/ConquerHook.dll && \
+    i686-w64-mingw32-g++ -m32 -mwindows -std=c++17 -O2 -DNDEBUG \
+      -D_WIN32_WINNT=0x0601 -static -static-libgcc -static-libstdc++ -s \
+      client-hook/src/launcher_main.cpp -luser32 -lkernel32 -o /out/PlayLauncher.exe
+
+FROM ghcr.io/selkies-project/selkies-gstreamer/gst-web:latest AS selkies-web
+
+FROM ubuntu:22.04
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    DISPLAY=:0 \
+    RESOLUTION=1024x768 \
+    WINEARCH=win32 \
+    WINEPREFIX=/tmp/wine-conquer \
+    WINEDEBUG=-all \
+    SELKIES_ENCODER=x264enc \
+    SELKIES_VIDEO_BITRATE=2500 \
+    SELKIES_FRAMERATE=30 \
+    SELKIES_ENABLE_AUDIO=true \
+    SELKIES_PORT=8080 \
+    GAME_SERVER_HOST=game.oblivionco.com.br \
+    GAME_AUTH_PORT=9958 \
+    GAME_PORT=5816 \
+    CONQUER_CLIENT_DIR=/opt/conquer-client
+
+RUN dpkg --add-architecture i386 && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends \
+      ca-certificates curl python3 python3-pip \
+      wine wine32 wine64 winetricks cabextract \
+      xvfb x11-utils xdotool openbox \
+      pulseaudio pulseaudio-utils \
+      gstreamer1.0-tools gstreamer1.0-plugins-base gstreamer1.0-plugins-good \
+      gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly gstreamer1.0-pulseaudio \
+      gstreamer1.0-nice gstreamer1.0-x python3-gi gir1.2-gstreamer-1.0 \
+      gir1.2-gst-plugins-base-1.0 gir1.2-gst-plugins-bad-1.0 \
+    && pip3 install --no-cache-dir selkies-gstreamer \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN useradd -m -s /bin/bash conquer && \
+    mkdir -p /opt/conquer-client /opt/conquer-hooks /opt/gst-web && \
+    chown -R conquer:conquer /opt/conquer-client /opt/conquer-hooks /opt/gst-web
+
+COPY --from=selkies-web /usr/share/nginx/html /opt/gst-web
+COPY --from=hook-builder /out/ConquerHook.dll /opt/conquer-hooks/ConquerHook.dll
+COPY --from=hook-builder /out/PlayLauncher.exe /opt/conquer-hooks/PlayLauncher.exe
+COPY web-client/scripts/launch-conquer.sh /usr/local/bin/launch-conquer.sh
+COPY web-client/scripts/entrypoint-webrtc.sh /usr/local/bin/entrypoint-webrtc.sh
+
+RUN chmod +x /usr/local/bin/launch-conquer.sh /usr/local/bin/entrypoint-webrtc.sh
+
+USER conquer
+WORKDIR /home/conquer
+
+EXPOSE 8080
+
+ENTRYPOINT ["/usr/local/bin/entrypoint-webrtc.sh"]

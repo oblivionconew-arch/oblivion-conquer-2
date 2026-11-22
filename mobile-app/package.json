@@ -1,0 +1,24 @@
+{
+  "name": "oblivion-conquer-mobile",
+  "version": "1.0.0",
+  "description": "Aplicativo Android (Capacitor) para Oblivion Conquer 2.0",
+  "private": true,
+  "scripts": {
+    "cap:init": "npx cap add android || true",
+    "cap:assets": "npx @capacitor/assets generate --android --iconBackgroundColor '#07090f' --splashBackgroundColor '#07090f'",
+    "cap:overrides": "node scripts/apply-android-overrides.mjs",
+    "cap:sync": "npx cap sync android",
+    "prepare:android": "npm run cap:init && npm run cap:sync && npm run cap:assets && npm run cap:overrides"
+  },
+  "dependencies": {
+    "@capacitor-community/keep-awake": "^6.0.0",
+    "@capacitor/android": "^6.1.2",
+    "@capacitor/core": "^6.1.2",
+    "@capacitor/splash-screen": "^6.0.2",
+    "@capacitor/status-bar": "^6.0.1"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
+    "@capacitor/cli": "^6.1.2"
+  }
+}

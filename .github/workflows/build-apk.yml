@@ -1,0 +1,116 @@
+name: Build Conquer-Mobile.apk (Android Capacitor)
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Tag para publicar no GitHub Releases (ex.: v1.0.0)'
+        required: false
+        default: 'v1.0.0'
+
+permissions:
+  contents: write
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile-app
+
+    steps:
+      - name: Checkout do repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Configurar Java 17 (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Configurar Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Instalar dependencias Capacitor
+        run: npm install
+
+      - name: Gerar projeto nativo Android + Icones/Splash + Overrides (Landscape/Fullscreen/WakeLock)
+        run: |
+          npx cap add android
+          npx cap sync android
+          npx @capacitor/assets generate --android --iconBackgroundColor '#07090f' --splashBackgroundColor '#07090f'
+          node scripts/apply-android-overrides.mjs
+
+      - name: Compilar APK Release (Gradle)
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleRelease
+
+      - name: Assinar APK (Keystore via Secrets ou autoassinada para teste)
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASS: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASS: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          BUILD_TOOLS="$(ls -d "${ANDROID_HOME}/build-tools/"* | sort -V | tail -n 1)"
+          UNSIGNED_APK="android/app/build/outputs/apk/release/app-release-unsigned.apk"
+          ALIGNED_APK="android/app/build/outputs/apk/release/app-aligned.apk"
+          OUT_APK="Conquer-Mobile.apk"
+
+          "${BUILD_TOOLS}/zipalign" -v -p 4 "${UNSIGNED_APK}" "${ALIGNED_APK}"
+
+          if [[ -n "${KEYSTORE_B64}" ]]; then
+            echo "${KEYSTORE_B64}" | base64 -d > release.keystore
+            KS_PASS="${KEYSTORE_PASS}"
+            K_ALIAS="${KEY_ALIAS}"
+            K_PASS="${KEY_PASS}"
+          else
+            echo "[INFO] Secrets de keystore nao configurados; gerando chave de assinatura automatica..."
+            KS_PASS="oblivionco2026"
+            K_ALIAS="oblivionco"
+            K_PASS="oblivionco2026"
+            keytool -genkeypair -v -keystore release.keystore -alias "${K_ALIAS}" \
+              -keyalg RSA -keysize 2048 -validity 10000 \
+              -storepass "${KS_PASS}" -keypass "${K_PASS}" \
+              -dname "CN=Oblivion Conquer, OU=Games, O=OblivionCO, L=SaoPaulo, ST=SP, C=BR"
+          fi
+
+          "${BUILD_TOOLS}/apksigner" sign \
+            --ks release.keystore \
+            --ks-pass "pass:${KS_PASS}" \
+            --ks-key-alias "${K_ALIAS}" \
+            --key-pass "pass:${K_PASS}" \
+            --out "${OUT_APK}" \
+            "${ALIGNED_APK}"
+
+          "${BUILD_TOOLS}/apksigner" verify --verbose "${OUT_APK}"
+          ls -lh "${OUT_APK}"
+
+      - name: Upload Conquer-Mobile.apk como Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Conquer-Mobile-APK
+          path: mobile-app/Conquer-Mobile.apk
+
+      - name: Publicar Conquer-Mobile.apk no GitHub Releases
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_type == 'tag' && github.ref_name || inputs.release_tag || 'v1.0.0' }}
+          name: "Oblivion Conquer Mobile (${{ github.ref_type == 'tag' && github.ref_name || inputs.release_tag || 'v1.0.0' }})"
+          body: |
+            ### Oblivion Conquer 2.0 — APK Android Oficial
+            - Orientação horizontal travada (**Landscape**) + Tela cheia imersiva (**Fullscreen**)
+            - **KeepAwake** nativo (tela não apaga durante o jogo)
+            - Joystick analógico virtual + Pular / Atacar / HP / MP + Barra retrátil `F1–F10` + Chat Android
+            - Conecta diretamente em `https://oblivionco.com.br/play.html`
+          files: mobile-app/Conquer-Mobile.apk

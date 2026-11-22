@@ -1,0 +1,24 @@
+[Unit]
+Description=Conquer Online 2.0 - NpcServer (Referencia para binarios TQ C++ separados)
+After=network-online.target conquer-msg.service
+Requires=conquer-msg.service
+
+[Service]
+Type=simple
+User=conquer
+Group=conquer
+WorkingDirectory=/opt/conquer/GameServer
+Environment=WINEARCH=win32
+Environment=WINEPREFIX=/opt/conquer/.wine
+Environment=WINEDEBUG=-all
+ExecStartPre=/bin/sleep 8
+ExecStart=/usr/bin/xvfb-run -a --server-args="-screen 0 1024x768x16" /usr/bin/wine /opt/conquer/GameServer/NpcServer.exe
+Restart=always
+RestartSec=5
+LimitNOFILE=65535
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=conquer-npc
+
+[Install]
+WantedBy=multi-user.target

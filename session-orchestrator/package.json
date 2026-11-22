@@ -1,0 +1,20 @@
+{
+  "name": "oblivion-conquer-orchestrator",
+  "version": "1.0.0",
+  "description": "Orquestrador de sessoes Docker de streaming Web para Oblivion Conquer 2.0",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "check": "node --check src/server.js && node --check src/auth.js && node --check src/dockerManager.js && node --check src/reaper.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dockerode": "^4.0.2",
+    "express": "^4.19.2",
+    "express-rate-limit": "^7.4.0",
+    "helmet": "^7.1.0",
+    "http-proxy": "^1.18.1",
+    "jsonwebtoken": "^9.0.2",
+    "mysql2": "^3.11.3"
+  }
+}

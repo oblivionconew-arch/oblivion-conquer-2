@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#07090f" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <title>Jogar Agora — Oblivion Conquer 2.0</title>
+  <link rel="stylesheet" href="css/play.css" />
+</head>
+<body>
+  <!-- Tela de Login / Conexao ao Orquestrador -->
+  <div id="lobbyOverlay">
+    <div class="lobby-card">
+      <div class="lobby-title">⚔️ OBLIVION CONQUER 2.0</div>
+      <p class="lobby-sub">Jogue direto pelo navegador ou celular em 1024x768 com áudio</p>
+      <form id="loginForm">
+        <div class="field">
+          <label for="loginUser">Usuário do Jogo</label>
+          <input id="loginUser" type="text" required minlength="3" maxlength="25" autocomplete="username" placeholder="Seu login do Conquer" />
+        </div>
+        <div class="field">
+          <label for="loginPass">Senha</label>
+          <input id="loginPass" type="password" required minlength="3" maxlength="25" autocomplete="current-password" placeholder="Sua senha" />
+        </div>
+        <button id="btnConnect" class="btn-play" type="submit">Entrar no Jogo Agora</button>
+        <div id="lobbyStatus"></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Barra Superior Retratil + Atalhos F1-F10 -->
+  <div id="topHud">
+    <div class="hud-bar">
+      <button id="btnToggleFKeys" class="hud-btn" type="button">F1-F10</button>
+      <button id="btnToggleTouch" class="hud-btn" type="button">🎮 Touch</button>
+      <button id="btnOpenChat" class="hud-btn" type="button">💬 Chat</button>
+      <button id="btnFullscreen" class="hud-btn" type="button">⛶ Tela Cheia</button>
+      <button id="btnExitSession" class="hud-btn danger" type="button">Sair</button>
+    </div>
+    <div id="fKeysDrawer" class="collapsed"></div>
+  </div>
+
+  <!-- Palco Fullscreen do Jogo (1024x768) -->
+  <main id="gameStage">
+    <div id="viewportBox">
+      <iframe
+        id="streamFrame"
+        title="Oblivion Conquer 2.0 Stream"
+        allow="autoplay; fullscreen; clipboard-read; clipboard-write; gamepad"
+        allowfullscreen
+      ></iframe>
+      <canvas id="streamCanvas" width="1024" height="768"></canvas>
+    </div>
+  </main>
+
+  <!-- Overlay de Controles Touch (ativado automaticamente no celular / APK) -->
+  <div id="touchOverlay">
+    <div id="joystickZone" aria-label="Joystick de movimento">
+      <div id="joystickKnob"></div>
+    </div>
+
+    <div id="actionCluster">
+      <button id="btnHp" class="action-btn" type="button">HP<br />F1</button>
+      <button id="btnMp" class="action-btn" type="button">MP<br />F2</button>
+      <button id="btnJump" class="action-btn" type="button">PULAR</button>
+      <button id="btnAttack" class="action-btn" type="button">ATACAR</button>
+    </div>
+  </div>
+
+  <!-- Input Flutuante para Teclado Virtual do Android / Chat -->
+  <div id="chatModal">
+    <input id="chatInput" type="text" maxlength="120" placeholder="Digite sua mensagem no chat..." />
+    <button id="chatSend" type="button">Enviar</button>
+  </div>
+
+  <script src="js/play-controls.js"></script>
+</body>
+</html>

@@ -1,0 +1,29 @@
+[Unit]
+Description=Conquer Online 2.0 Unified Server (Auth 9958 + Game 5816 + NPC) via Wine + Xvfb
+Documentation=file:///opt/conquer/README_DEPLOY.md
+After=network-online.target mariadb.service mysql.service
+Wants=network-online.target mariadb.service
+
+[Service]
+Type=simple
+User=conquer
+Group=conquer
+WorkingDirectory=/opt/conquer/server
+Environment=APP_DIR=/opt/conquer
+Environment=WINEARCH=win32
+Environment=WINEPREFIX=/opt/conquer/.wine
+Environment=WINEDEBUG=-all
+ExecStart=/opt/conquer/start_server.sh
+Restart=always
+RestartSec=5
+StartLimitIntervalSec=300
+StartLimitBurst=10
+TimeoutStopSec=30
+KillMode=mixed
+LimitNOFILE=65535
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=conquer-server
+
+[Install]
+WantedBy=multi-user.target

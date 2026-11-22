@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Oblivion Conquer 2.0 — Servidor Brasileiro 24/7</title>
+  <style>
+    :root {
+      --bg: #0b0d14;
+      --card: #141826;
+      --border: #252c44;
+      --gold: #f5b942;
+      --crimson: #e04444;
+      --text: #eef1f8;
+      --muted: #98a2bd;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: radial-gradient(circle at top, #1b223a 0%, var(--bg) 60%);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+    header {
+      border-bottom: 1px solid var(--border);
+      background: rgba(11, 13, 20, 0.85);
+      backdrop-filter: blur(8px);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .nav {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 16px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+    }
+    .brand { font-size: 1.25rem; font-weight: 800; color: var(--gold); letter-spacing: 0.5px; }
+    .nav-links { display: flex; gap: 20px; }
+    .nav-links a { color: var(--text); text-decoration: none; font-weight: 600; font-size: 0.95rem; }
+    .nav-links a:hover { color: var(--gold); }
+    .hero {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 72px 24px 48px;
+      text-align: center;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(245, 185, 66, 0.12);
+      border: 1px solid rgba(245, 185, 66, 0.35);
+      color: var(--gold);
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      margin-bottom: 20px;
+    }
+    h1 { font-size: clamp(2rem, 5vw, 3.4rem); font-weight: 900; line-height: 1.15; margin-bottom: 16px; }
+    .hero p { color: var(--muted); max-width: 680px; margin: 0 auto 32px; font-size: 1.08rem; }
+    .cta-row { display: flex; justify-content: center; gap: 14px; flex-wrap: wrap; }
+    .btn {
+      padding: 14px 26px;
+      border-radius: 10px;
+      font-weight: 700;
+      text-decoration: none;
+      cursor: pointer;
+      border: none;
+      font-size: 1rem;
+      transition: transform 0.15s ease, opacity 0.15s ease;
+    }
+    .btn:hover { transform: translateY(-1px); opacity: 0.94; }
+    .btn-primary { background: linear-gradient(135deg, #f5b942, #d98218); color: #121212; }
+    .btn-secondary { background: var(--card); color: var(--text); border: 1px solid var(--border); }
+    .container { max-width: 1080px; margin: 0 auto; padding: 24px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; margin-bottom: 48px; }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 24px;
+    }
+    .card h3 { color: var(--gold); margin-bottom: 8px; font-size: 1.1rem; }
+    .card p { color: var(--muted); font-size: 0.95rem; }
+    .section-title { font-size: 1.7rem; margin-bottom: 18px; text-align: center; }
+    form { display: grid; gap: 14px; max-width: 460px; margin: 0 auto; }
+    label { font-size: 0.9rem; color: var(--muted); font-weight: 600; }
+    input {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: #0d101a;
+      color: var(--text);
+      font-size: 1rem;
+      margin-top: 6px;
+    }
+    .msg { text-align: center; font-weight: 600; min-height: 24px; margin-top: 8px; }
+    footer {
+      text-align: center;
+      color: var(--muted);
+      padding: 36px 24px;
+      border-top: 1px solid var(--border);
+      margin-top: 48px;
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="nav">
+      <div class="brand">⚔️ OBLIVION CONQUER 2.0</div>
+      <nav class="nav-links">
+        <a href="play.html" style="color: var(--gold);">🎮 Jogar no Navegador</a>
+        <a href="#recursos">Recursos</a>
+        <a href="#cadastro">Criar Conta</a>
+        <a href="#download">Download</a>
+      </nav>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="badge">● ONLINE 24/7 — 100% PORTUGUÊS (PT-BR) — PATCH 5915</div>
+    <h1>Reviva a Era Clássica do Conquer Online 2.0</h1>
+    <p>Servidor brasileiro estável, traduzido para Português, com Multi-Client liberado, Sub-Classes funcionais, efeitos de Gemas e Bless, Guerra de Guildas, Arena e eventos diários.</p>
+    <div class="cta-row">
+      <a class="btn btn-primary" href="play.html">🎮 Jogar no Navegador (PC & Celular)</a>
+      <a class="btn btn-secondary" href="#cadastro">Criar Conta Grátis</a>
+      <a class="btn btn-secondary" href="#download">📱 Baixar APK / Cliente PC</a>
+    </div>
+  </section>
+
+  <main class="container">
+    <div id="recursos" class="grid">
+      <div class="card">
+        <h3>🇧🇷 100% Português Brasil</h3>
+        <p>Mensagens do sistema, torneios, eventos, guildas, clãs e principais NPCs traduzidos para a comunidade brasileira.</p>
+      </div>
+      <div class="card">
+        <h3>⚔️ PvP & Torneios Diários</h3>
+        <p>Guerra de Guildas, Elite Guild War, Clan War, Capture the Flag, Arena 1v1, Team Arena, Last Man Standing e DisCity.</p>
+      </div>
+      <div class="card">
+        <h3>🚀 Cliente Leve + Multi-Client</h3>
+        <p>Launcher limpo com ConquerHook integrado — abre direto com duplo clique, sem erros de Visual Studio e com multi-client liberado.</p>
+      </div>
+    </div>
+
+    <section id="cadastro" class="card" style="margin-bottom: 40px;">
+      <h2 class="section-title">Criar Conta</h2>
+      <form id="registerForm" action="register.php" method="POST">
+        <div>
+          <label for="username">Usuário (4 a 16 caracteres, letras e números)</label>
+          <input id="username" name="username" type="text" required minlength="4" maxlength="16" pattern="[A-Za-z0-9_]+" placeholder="Ex: GuerreiroBR" />
+        </div>
+        <div>
+          <label for="password">Senha (4 a 16 caracteres)</label>
+          <input id="password" name="password" type="password" required minlength="4" maxlength="16" placeholder="Digite sua senha" />
+        </div>
+        <div>
+          <label for="email">E-mail (opcional)</label>
+          <input id="email" name="email" type="email" maxlength="64" placeholder="seuemail@exemplo.com" />
+        </div>
+        <button class="btn btn-primary" type="submit">Cadastrar Conta</button>
+        <div id="formMsg" class="msg"></div>
+      </form>
+    </section>
+
+    <section id="download" class="card">
+      <h2 class="section-title">Como Jogar em 3 Passos</h2>
+      <div class="grid" style="margin-bottom: 0;">
+        <div>
+          <h3>1. Baixe o Cliente PC ou APK Android</h3>
+          <p>Jogue no celular instalando o <strong>Conquer-Mobile.apk</strong> ou baixe o cliente completo de PC (v5915).</p>
+          <p style="margin-top: 12px; display: flex; gap: 10px; flex-wrap: wrap;">
+            <a class="btn btn-primary" href="https://github.com/oblivionconew-arch/oblivion-conquer-2/releases/latest/download/Conquer-Mobile.apk">📱 Baixar APK Android</a>
+            <a class="btn btn-secondary" href="play.html">🌐 Jogar no Navegador</a>
+          </p>
+        </div>
+        <div>
+          <h3>2. Crie sua Conta</h3>
+          <p>Use o formulário acima para registrar seu usuário e senha diretamente no servidor.</p>
+        </div>
+        <div>
+          <h3>3. Abra pelo PlayLauncher.exe</h3>
+          <p>Execute <code>PlayLauncher.exe</code> dentro da pasta do cliente e bom jogo!</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    Oblivion Conquer Online 2.0 &copy; 2026 — Servidor Privado Brasileiro
+  </footer>
+
+  <script>
+    const form = document.getElementById('registerForm');
+    const msg = document.getElementById('formMsg');
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      msg.style.color = '#f5b942';
+      msg.textContent = 'Processando cadastro...';
+      try {
+        const res = await fetch(form.action, { method: 'POST', body: new FormData(form) });
+        const data = await res.json();
+        msg.style.color = data.ok ? '#4ade80' : '#f87171';
+        msg.textContent = data.message || 'Resposta inesperada do servidor.';
+        if (data.ok) form.reset();
+      } catch (err) {
+        msg.style.color = '#f87171';
+        msg.textContent = 'Backend PHP (register.php) nao configurado nesta hospedagem estatica. Hospede com PHP+MySQL ou configure a URL do register.php.';
+      }
+    });
+  </script>
+</body>
+</html>

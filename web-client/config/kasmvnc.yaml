@@ -1,0 +1,34 @@
+desktop:
+  resolution:
+    width: 1024
+    height: 768
+  allow_resize: false
+  pixel_depth: 24
+
+encoding:
+  max_frame_rate: 30
+  rect_encoding_mode:
+    min_quality: 6
+    max_quality: 9
+    consider_lossless_video: false
+  video_scaling_mode:
+    scaling_method: nearest
+
+network:
+  protocol: http
+  interface: 0.0.0.0
+  websocket_port: 6901
+  use_ipv4: true
+  use_ipv6: false
+  ssl:
+    require_ssl: false
+
+server:
+  http:
+    httpd_directory: /usr/share/kasmvnc/www
+  advanced:
+    kasm_password_file: /home/conquer/.kasmpasswd
+    x_font_path: auto
+
+runtime_configuration:
+  allow_client_to_override_kasm_server_settings: false

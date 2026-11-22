@@ -1,0 +1,86 @@
+version: "3.9"
+
+services:
+  # Imagem base das sessoes (construida uma vez; instanciada dinamicamente pelo orchestrator)
+  conquer-web-image:
+    build:
+      context: ..
+      dockerfile: web-client/Dockerfile
+    image: oblivionco/conquer-web-client:latest
+    profiles: ["build-only"]
+
+  # Perfil opcional WebRTC (Selkies-GStreamer)
+  conquer-webrtc-image:
+    build:
+      context: ..
+      dockerfile: web-client/Dockerfile.webrtc
+    image: oblivionco/conquer-web-client:webrtc
+    profiles: ["webrtc-build"]
+
+  # Orquestrador de Sessoes (API REST + Proxy HTTP/WSS Dinamico + Idle Reaper 5 min)
+  orchestrator:
+    build:
+      context: ../session-orchestrator
+      dockerfile: Dockerfile
+    container_name: conquer-orchestrator
+    restart: unless-stopped
+    environment:
+      PORT: "3000"
+      NODE_ENV: "production"
+      PUBLIC_STREAM_BASE_URL: "${PUBLIC_STREAM_BASE_URL:-https://stream.oblivionco.com.br}"
+      ALLOWED_ORIGINS: "${ALLOWED_ORIGINS:-https://oblivionco.com.br,https://www.oblivionco.com.br,http://localhost:8080,capacitor://localhost,https://localhost}"
+      JWT_SECRET: "${JWT_SECRET:-TROQUE_POR_SEGREDO_FORTE_64_CHARS}"
+      SESSION_IMAGE: "${SESSION_IMAGE:-oblivionco/conquer-web-client:latest}"
+      SESSION_ENGINE: "${SESSION_ENGINE:-kasmvnc}"
+      SESSION_CONTAINER_PORT: "${SESSION_CONTAINER_PORT:-6901}"
+      DOCKER_NETWORK: "conquer-stream-net"
+      HOST_CLIENT_PATH: "${HOST_CLIENT_PATH:-/opt/conquer/client}"
+      GAME_SERVER_HOST: "${GAME_SERVER_HOST:-game.oblivionco.com.br}"
+      GAME_AUTH_PORT: "${GAME_AUTH_PORT:-9958}"
+      GAME_PORT: "${GAME_PORT:-5816}"
+      MAX_CONCURRENT_SESSIONS: "${MAX_CONCURRENT_SESSIONS:-10}"
+      SESSION_MEMORY_MB: "${SESSION_MEMORY_MB:-1536}"
+      SESSION_CPUS: "${SESSION_CPUS:-1.0}"
+      IDLE_TIMEOUT_MS: "${IDLE_TIMEOUT_MS:-300000}"
+      # Autenticacao MySQL (tabela accounts do servidor Conquer)
+      MYSQL_HOST: "${MYSQL_HOST:-host.docker.internal}"
+      MYSQL_PORT: "${MYSQL_PORT:-3306}"
+      MYSQL_USER: "${MYSQL_USER:-conquer}"
+      MYSQL_PASSWORD: "${MYSQL_PASSWORD:-TROQUE_ESTA_SENHA}"
+      MYSQL_DATABASE: "${MYSQL_DATABASE:-conquer}"
+      # Autenticacao opcional Supabase JWT
+      SUPABASE_URL: "${SUPABASE_URL:-}"
+      SUPABASE_JWT_SECRET: "${SUPABASE_JWT_SECRET:-}"
+      ALLOW_GUEST_DEMO: "${ALLOW_GUEST_DEMO:-false}"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - conquer-stream-net
+
+  # Proxy HTTPS automatico (Let's Encrypt / Cloudflare Origin) para stream.oblivionco.com.br
+  caddy:
+    image: caddy:2-alpine
+    container_name: conquer-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - orchestrator
+    networks:
+      - conquer-stream-net
+
+networks:
+  conquer-stream-net:
+    name: conquer-stream-net
+    driver: bridge
+
+volumes:
+  caddy_data:
+  caddy_config:

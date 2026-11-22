@@ -1,0 +1,27 @@
+# Secrets & local env
+.env
+web-client/.env
+*.keystore
+*.jks
+*.pfx
+
+# Node & Capacitor build artifacts
+node_modules/
+mobile-app/android/
+mobile-app/*.apk
+
+# Large compiled/runtime server distribution & SQL dumps (deploy directly to VPS via scp/rsync)
+dist/
+deploy/sql/*.sql
+
+# C# / C++ intermediate build dirs
+server/src/Source/bin/
+server/src/Source/obj/
+server/src/Source/TestResults/
+client-hook/obj/
+client-hook/build/
+
+# Logs & OS files
+*.log
+.DS_Store
+Thumbs.db

@@ -60,7 +60,7 @@ RUN dpkg --add-architecture i386 && \
 ARG KASMVNC_VERSION=1.3.2
 RUN wget -q "https://github.com/kasmtech/KasmVNC/releases/download/v${KASMVNC_VERSION}/kasmvncserver_jammy_${KASMVNC_VERSION}_amd64.deb" -O /tmp/kasmvnc.deb && \
     apt-get update && \
-    apt-get install -y --no-install-recommends /tmp/kasmvnc.deb && \
+    apt-get install -y /tmp/kasmvnc.deb libdatetime-perl && \
     rm -f /tmp/kasmvnc.deb && \
     rm -rf /var/lib/apt/lists/*
 

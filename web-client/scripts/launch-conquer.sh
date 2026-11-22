@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# Prepara pasta efemera do cliente (symlinks read-only + conquer_hook.ini gravavel) e inicia Conquer.exe
 set -euo pipefail
 
 CLIENT_RO="${CONQUER_CLIENT_DIR:-/opt/conquer-client}"
@@ -8,12 +7,11 @@ HOOK_SRC="/opt/conquer-hooks"
 
 mkdir -p "${CLIENT_RUN}"
 
-# Cria symlinks de todos os assets pesados do cliente read-only para economizar RAM/disco por sessao
 if [[ -d "${CLIENT_RO}" ]]; then
     for item in "${CLIENT_RO}"/*; do
         base="$(basename "${item}")"
         case "${base}" in
-            play.exe|CSV3Hook.dll|CSV3Hook.dll.lnk|Ntyr.dll|SeW.dll|OblivionCo.exe|conquer_hook.ini|csv3config.ini|PlayLauncher.exe|ConquerHook.dll)
+            play.exe|CSV3Hook.dll|CSV3Hook.dll.lnk|Ntyr.dll|SeW.dll|OblivionCo.exe|conquer_hook.ini|csv3config.ini|PlayLauncher.exe|ConquerHook.dll|dinput8.dll|ini)
                 continue
                 ;;
         esac
@@ -21,11 +19,30 @@ if [[ -d "${CLIENT_RO}" ]]; then
     done
 fi
 
-cp -f "${HOOK_SRC}/ConquerHook.dll" "${CLIENT_RUN}/ConquerHook.dll"
-cp -f "${HOOK_SRC}/PlayLauncher.exe" "${CLIENT_RUN}/PlayLauncher.exe"
+# Copia proxy DLL nativa dinput8.dll e ConquerHook.dll
+cp -f "${CLIENT_RO}/dinput8.dll" "${CLIENT_RUN}/dinput8.dll" 2>/dev/null || cp -f "${HOOK_SRC}/dinput8.dll" "${CLIENT_RUN}/dinput8.dll" 2>/dev/null || true
+cp -f "${CLIENT_RO}/ConquerHook.dll" "${CLIENT_RUN}/ConquerHook.dll" 2>/dev/null || cp -f "${HOOK_SRC}/ConquerHook.dll" "${CLIENT_RUN}/ConquerHook.dll" 2>/dev/null || true
 
-# Gera conquer_hook.ini e csv3config.ini apontando para o servidor Conquer
-cat > "${CLIENT_RUN}/conquer_hook.ini" <<EOF
+# Prepara diretorio ini gravavel com links para os arquivos originais
+rm -rf "${CLIENT_RUN}/ini"
+mkdir -p "${CLIENT_RUN}/ini"
+if [[ -d "${CLIENT_RO}/ini" ]]; then
+    for f in "${CLIENT_RO}/ini"/*; do
+        ln -sfn "${f}" "${CLIENT_RUN}/ini/$(basename "${f}")"
+    done
+fi
+
+# Escreve configuracoes de tela windowed borderless (1024x768) compativeis com llvmpipe/Xvfb
+cat > "${CLIENT_RUN}/ini/GameSetup.ini" << 'EOINI'
+[ScreenMode]
+ScrWidth=1024
+ScrHeight=768
+FullScrType=1
+ScreenModeRecord=2
+EOINI
+cp -f "${CLIENT_RUN}/ini/GameSetup.ini" "${CLIENT_RUN}/ini/GameSetUp.ini"
+
+cat > "${CLIENT_RUN}/conquer_hook.ini" << EOINI
 [config]
 host=${GAME_SERVER_HOST:-game.oblivionco.com.br}
 auth_port=${GAME_AUTH_PORT:-9958}
@@ -36,58 +53,30 @@ multiclient=1
 bypass_antidebug=1
 block_autopatch=1
 log=0
-EOF
+EOINI
 
-cat > "${CLIENT_RUN}/csv3config.ini" <<EOF
+cat > "${CLIENT_RUN}/csv3config.ini" << EOINI
 [config]
 host=${GAME_SERVER_HOST:-game.oblivionco.com.br}
 port=${GAME_AUTH_PORT:-9958}
-EOF
+EOINI
 
-# Configura resolucao do cliente (1024x768) caso exista ini/GameSetUp.ini
-mkdir -p "${CLIENT_RUN}/ini"
-if [[ -L "${CLIENT_RUN}/ini" ]]; then
-    # Substitui symlink do diretorio ini por diretorio real com symlinks internos
-    rm -f "${CLIENT_RUN}/ini"
-    mkdir -p "${CLIENT_RUN}/ini"
-    for f in "${CLIENT_RO}/ini"/*; do
-        ln -sfn "${f}" "${CLIENT_RUN}/ini/$(basename "${f}")"
-    done
-fi
-
-cat > "${CLIENT_RUN}/ini/GameSetUp.ini" <<EOF
-[ScreenMode]
-ScrWidth=1024
-ScrHeight=768
-FullScrType=1
-ScreenModeRecord=2
-EOF
-
-# Inicializa Wine32 prefix leve + Mesa llvmpipe (Direct3D 8/9 via OpenGL software)
 export WINEARCH=win32
 export WINEPREFIX="${WINEPREFIX:-/home/conquer/.wine}"
 export WINEDEBUG=-all
 export LIBGL_ALWAYS_SOFTWARE=1
 export GALLIUM_DRIVER=llvmpipe
-mkdir -p "${WINEPREFIX}"
-
-if [[ ! -d "${WINEPREFIX}/drive_c" ]]; then
-    wineboot --init || true
-    wineserver -w || true
-fi
 
 cd "${CLIENT_RUN}"
 
 if [[ ! -f "${CLIENT_RUN}/Conquer.exe" ]]; then
-    echo "[ERROR] Conquer.exe nao encontrado em ${CLIENT_RO}. Monte o volume do cliente em /opt/conquer-client!" >&2
+    echo "[ERROR] Conquer.exe nao encontrado!" >&2
     sleep infinity
 fi
 
-# Loop supervisionado: se o jogador fechar o Conquer, reabre automaticamente na sessao
 while true; do
-    echo "[INFO] Iniciando Conquer.exe via PlayLauncher.exe (host=${GAME_SERVER_HOST}:${GAME_AUTH_PORT})..."
-    wine "${CLIENT_RUN}/PlayLauncher.exe" || true
-    # Aguarda processo Conquer.exe finalizar antes de relancar
+    echo "[INFO] Iniciando Conquer.exe blacknull (host=${GAME_SERVER_HOST:-game.oblivionco.com.br}:${GAME_AUTH_PORT:-9958})..."
+    wine "${CLIENT_RUN}/Conquer.exe" blacknull || true
     while pgrep -f "Conquer.exe" >/dev/null 2>&1; do
         sleep 2
     done

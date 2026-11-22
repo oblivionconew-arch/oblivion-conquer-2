@@ -847,12 +847,30 @@ namespace Conquer_Online_Server
                     player.Info = new Authentication();
                     player.Info.Deserialize(packet);
                     player.Account = new AccountTable(player.Info.Username);
-                    msvcrt.msvcrt.srand(player.PasswordSeed);
+
+                    bool passwordOk = false;
+                    if (player.Account.exists)
+                    {
+                        var candidates = player.Info.GetPasswordCandidates(player.PasswordSeed);
+                        foreach (var cand in candidates)
+                        {
+                            if (string.Equals(player.Account.Password, cand, StringComparison.Ordinal))
+                            {
+                                player.Info.Password = cand;
+                                passwordOk = true;
+                                break;
+                            }
+                        }
+                    }
 
                     Forward Fw = new Forward();
-                    if (player.Account.Password == player.Info.Password && player.Account.exists)
+                    if (passwordOk && player.Account.exists)
                         Fw.Type = Forward.ForwardType.Ready;
-                    else Fw.Type = Forward.ForwardType.InvalidInfo;
+                    else
+                        Fw.Type = Forward.ForwardType.InvalidInfo;
+
+                    Console.WriteLine("[Auth] User='" + (player.Info.Username ?? "") + "' Server='" + (player.Info.Server ?? "") + "' Type=" + id + " Exists=" + player.Account.exists + " Result=" + Fw.Type);
+
                     if (IPBan.IsBanned(arg3.IP))
                     {
                         Fw.Type = Forward.ForwardType.Banned;

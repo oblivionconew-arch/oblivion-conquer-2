@@ -4,6 +4,7 @@
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #include <windows.h>
+#include <unknwn.h>
 #include <shellapi.h>
 #include <cstdio>
 #include <cstring>
@@ -28,6 +29,8 @@ typedef BOOL   (WINAPI* CheckRemoteDebuggerPresent_t)(HANDLE, PBOOL);
 typedef NTSTATUS (NTAPI* NtQueryInformationProcess_t)(HANDLE, ULONG, PVOID, ULONG, PULONG);
 typedef HINSTANCE (WINAPI* ShellExecuteA_t)(HWND, LPCSTR, LPCSTR, LPCSTR, LPCSTR, INT);
 typedef HINSTANCE (WINAPI* ShellExecuteW_t)(HWND, LPCWSTR, LPCWSTR, LPCWSTR, LPCWSTR, INT);
+typedef int       (WINAPI* MessageBoxA_t)(HWND, LPCSTR, LPCSTR, UINT);
+typedef int       (WINAPI* MessageBoxW_t)(HWND, LPCWSTR, LPCWSTR, UINT);
 
 static Connect_t                    g_OrigConnect                    = nullptr;
 static CreateMutexA_t               g_OrigCreateMutexA               = nullptr;
@@ -39,6 +42,8 @@ static CheckRemoteDebuggerPresent_t g_OrigCheckRemoteDebuggerPresent = nullptr;
 static NtQueryInformationProcess_t  g_OrigNtQueryInformationProcess  = nullptr;
 static ShellExecuteA_t              g_OrigShellExecuteA              = nullptr;
 static ShellExecuteW_t              g_OrigShellExecuteW              = nullptr;
+static MessageBoxA_t                g_OrigMessageBoxA                = nullptr;
+static MessageBoxW_t                g_OrigMessageBoxW                = nullptr;
 
 static HMODULE g_SelfModule = nullptr;
 
@@ -240,6 +245,27 @@ static HINSTANCE WINAPI HookedShellExecuteW(HWND hwnd, LPCWSTR op, LPCWSTR file,
 }
 
 // ============================================================================
+// 5. Popup Suppression Hooks (Flash 6.0 warning auto-suppression)
+// ============================================================================
+static int WINAPI HookedMessageBoxA(HWND hwnd, LPCSTR text, LPCSTR caption, UINT type) {
+    if (text && (ContainsNoCaseA(text, "Flash") || ContainsNoCaseA(text, "Adobe Flash"))) {
+        HookLog("Suppressed Flash MessageBoxA: '%s'", text);
+        return IDOK;
+    }
+    if (g_OrigMessageBoxA) return g_OrigMessageBoxA(hwnd, text, caption, type);
+    return MessageBoxA(hwnd, text, caption, type);
+}
+
+static int WINAPI HookedMessageBoxW(HWND hwnd, LPCWSTR text, LPCWSTR caption, UINT type) {
+    if (text && (ContainsNoCaseW(text, L"Flash") || ContainsNoCaseW(text, L"Adobe Flash"))) {
+        HookLog("Suppressed Flash MessageBoxW");
+        return IDOK;
+    }
+    if (g_OrigMessageBoxW) return g_OrigMessageBoxW(hwnd, text, caption, type);
+    return MessageBoxW(hwnd, text, caption, type);
+}
+
+// ============================================================================
 // Helper: Hook both Inline (for GetProcAddress callers) and IAT (guaranteed fallback)
 // ============================================================================
 template <typename FuncT>
@@ -298,7 +324,33 @@ static void InitializeHooks() {
         InstallHybridHook("shell32.dll", "ShellExecuteW", reinterpret_cast<void*>(&HookedShellExecuteW), &g_OrigShellExecuteW);
     }
 
+    // Suppress legacy Adobe Flash ActiveX popups on modern Windows 10/11
+    InstallHybridHook("user32.dll", "MessageBoxA", reinterpret_cast<void*>(&HookedMessageBoxA), &g_OrigMessageBoxA);
+    InstallHybridHook("user32.dll", "MessageBoxW", reinterpret_cast<void*>(&HookedMessageBoxW), &g_OrigMessageBoxW);
+
     HookLog("ConquerHook.dll initialization complete.");
+}
+
+// Proxy forwarder for DINPUT8.dll (loads natively in Conquer.exe without any injector or antivirus flags)
+typedef HRESULT (WINAPI* DirectInput8Create_t)(HINSTANCE hinst, DWORD dwVersion, REFIID riidltf, LPVOID *ppvOut, LPUNKNOWN punkOuter);
+static DirectInput8Create_t g_OrigDirectInput8Create = nullptr;
+
+extern "C" __declspec(dllexport) HRESULT WINAPI DirectInput8Create(
+    HINSTANCE hinst, DWORD dwVersion, REFIID riidltf, LPVOID *ppvOut, LPUNKNOWN punkOuter)
+{
+    if (!g_OrigDirectInput8Create) {
+        char sysPath[MAX_PATH] = {0};
+        GetSystemDirectoryA(sysPath, MAX_PATH);
+        std::strcat(sysPath, "\\dinput8.dll");
+        HMODULE hReal = LoadLibraryA(sysPath);
+        if (hReal) {
+            g_OrigDirectInput8Create = reinterpret_cast<DirectInput8Create_t>(GetProcAddress(hReal, "DirectInput8Create"));
+        }
+    }
+    if (g_OrigDirectInput8Create) {
+        return g_OrigDirectInput8Create(hinst, dwVersion, riidltf, ppvOut, punkOuter);
+    }
+    return E_FAIL;
 }
 
 // Optional export so ConquerHook.dll can also be statically added to Conquer.exe Import Table (CFF Explorer / Stud_PE)

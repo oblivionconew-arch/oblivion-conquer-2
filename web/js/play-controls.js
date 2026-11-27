@@ -47,12 +47,9 @@
 
   // Detecta celular / tablet / Capacitor automaticamente
   function isTouchDevice() {
-    return (
-      window.matchMedia('(pointer: coarse)').matches ||
-      'ontouchstart' in window ||
-      navigator.maxTouchPoints > 0 ||
-      Boolean(window.Capacitor)
-    );
+    if (window.Capacitor) return true;
+    const ua = navigator.userAgent || '';
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
   }
 
   function setTouchOverlay(enabled) {
@@ -339,35 +336,17 @@
     }
   });
 
-  loginForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const username = document.getElementById('loginUser').value.trim();
-    const password = document.getElementById('loginPass').value;
-
+  btnConnect.addEventListener('click', async () => {
     btnConnect.disabled = true;
     lobbyStatus.style.color = '#f5b942';
-    lobbyStatus.textContent = 'Autenticando conta...';
+    lobbyStatus.textContent = 'Iniciando cliente Oblivion-CO v7032 (aguarde ~10s)...';
 
     try {
-      const authRes = await fetch(`${ORCHESTRATOR_URL}/api/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password }),
-      });
-      const authData = await authRes.json();
-      if (!authRes.ok || !authData.ok) {
-        throw new Error(authData.message || 'Falha no login.');
-      }
-
-      state.authToken = authData.token;
-      localStorage.setItem('conquer_auth_token', authData.token);
-
-      lobbyStatus.textContent = 'Iniciando sua sessao exclusiva do Conquer (aguarde ~10s)...';
-      const sessRes = await fetch(`${ORCHESTRATOR_URL}/api/sessions/start`, {
+      const sessRes = await fetch(`${ORCHESTRATOR_URL}/api/sessions/quick-start`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${state.authToken}`,
+          ...(state.authToken ? { Authorization: `Bearer ${state.authToken}` } : {}),
         },
       });
       const sessData = await sessRes.json();
@@ -389,5 +368,5 @@
   });
 
   // Inicializacao automatica
-  setTouchOverlay(isTouchDevice());
+  setTouchOverlay(false);
 })();

@@ -10,23 +10,18 @@
   <link rel="stylesheet" href="css/play.css" />
 </head>
 <body>
-  <!-- Tela de Login / Conexao ao Orquestrador -->
+  <!-- Tela de Inicializacao / Conexao ao Orquestrador -->
   <div id="lobbyOverlay">
     <div class="lobby-card">
-      <div class="lobby-title">⚔️ OBLIVION CONQUER 2.0</div>
-      <p class="lobby-sub">Jogue direto pelo navegador ou celular em 1024x768 com áudio</p>
-      <form id="loginForm">
-        <div class="field">
-          <label for="loginUser">Usuário do Jogo</label>
-          <input id="loginUser" type="text" required minlength="3" maxlength="25" autocomplete="username" placeholder="Seu login do Conquer" />
-        </div>
-        <div class="field">
-          <label for="loginPass">Senha</label>
-          <input id="loginPass" type="password" required minlength="3" maxlength="25" autocomplete="current-password" placeholder="Sua senha" />
-        </div>
-        <button id="btnConnect" class="btn-play" type="submit">Entrar no Jogo Agora</button>
-        <div id="lobbyStatus"></div>
-      </form>
+      <div class="lobby-title">⚔️ OBLIVION CONQUER ONLINE</div>
+      <p class="lobby-sub">Cliente v7032 Oficial • By Scorpions-Games</p>
+      <p style="text-align: center; color: #94a3b8; font-size: 0.92rem; margin: 16px 0;">
+        Conexão direta ao servidor oficial em 1024x768 com som e renderização DirectX.
+      </p>
+      <div style="text-align: center; margin: 18px 0;">
+        <button id="btnConnect" class="btn-play" type="button" style="font-size: 1.05rem; padding: 14px;">⚔️ Entrar no Jogo Agora</button>
+      </div>
+      <div id="lobbyStatus" style="font-size: 0.9rem; text-align: center; color: var(--gold); min-height: 22px;"></div>
     </div>
   </div>
 

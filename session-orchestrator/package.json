@@ -4,7 +4,7 @@
   "description": "Orquestrador de sessoes Docker de streaming Web para Oblivion Conquer 2.0",
   "main": "src/server.js",
   "scripts": {
-    "start": "node src/server.js",
+    "start": "node --insecure-http-parser src/server.js",
     "check": "node --check src/server.js && node --check src/auth.js && node --check src/dockerManager.js && node --check src/reaper.js"
   },
   "dependencies": {

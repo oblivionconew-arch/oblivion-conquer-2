@@ -1,6 +1,13 @@
 stream.oblivionco.com.br {
     encode gzip zstd
 
+    # Download direto de instaladores e arquivos
+    handle /downloads/* {
+        root * /var/downloads
+        uri strip_prefix /downloads
+        file_server browse
+    }
+
     # Aumenta timeouts para conexoes WebSocket/KasmVNC longas
     reverse_proxy orchestrator:3000 {
         flush_interval -1

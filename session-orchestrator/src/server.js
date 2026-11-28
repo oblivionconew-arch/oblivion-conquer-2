@@ -148,6 +148,38 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
   }
 });
 
+app.post('/api/sessions/quick-start', authLimiter, async (req, res) => {
+  try {
+    const hdr = req.headers.authorization || '';
+    const token = hdr.startsWith('Bearer ') ? hdr.slice(7) : null;
+    const authUser = verifyAnyAuthToken(token);
+    const username = authUser ? authUser.username : `Player_${Math.floor(1000 + Math.random() * 9000)}`;
+
+    const meta = await createOrReuseSession(username);
+    const streamToken = issueStreamToken(meta.sessionId, meta.username);
+    const wsPath = `s/${meta.sessionId}/websockify?token=${encodeURIComponent(streamToken)}`;
+    const streamPath = `/s/${meta.sessionId}/?token=${encodeURIComponent(streamToken)}&autoconnect=true&resize=scale&path=${encodeURIComponent(wsPath)}`;
+    const streamUrl = `${PUBLIC_STREAM_BASE_URL}${streamPath}`;
+
+    res.json({
+      ok: true,
+      sessionId: meta.sessionId,
+      engine: meta.engine,
+      streamUrl,
+      streamToken,
+      resolution: '1024x768',
+      heartbeatIntervalMs: 30000,
+      idleTimeoutMs: CONFIG.idleTimeoutMs,
+    });
+  } catch (err) {
+    console.error('[QuickStart] Erro:', err);
+    res.status(err.statusCode || 500).json({
+      ok: false,
+      message: err.message || 'Falha ao alocar sessao de jogo.',
+    });
+  }
+});
+
 app.post('/api/sessions/start', requireAuth, async (req, res) => {
   try {
     const meta = await createOrReuseSession(req.user.username);
@@ -197,7 +229,7 @@ app.delete('/api/sessions/:id', requireAuth, async (req, res) => {
 // ============================================================================
 // Proxy Reverso Dinamico HTTP + WebSocket (/s/:sessionId/* -> container interno)
 // ============================================================================
-const proxy = httpProxy.createProxyServer({ ws: true, xfwd: true });
+const proxy = httpProxy.createProxyServer({ ws: true, xfwd: true, changeOrigin: true, secure: false });
 
 proxy.on('error', (err, req, res) => {
   console.warn('[Proxy] Erro:', err.message);

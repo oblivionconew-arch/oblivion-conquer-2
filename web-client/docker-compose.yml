@@ -27,6 +27,7 @@ services:
     environment:
       PORT: "3000"
       NODE_ENV: "production"
+      NODE_OPTIONS: "--insecure-http-parser"
       PUBLIC_STREAM_BASE_URL: "${PUBLIC_STREAM_BASE_URL:-https://stream.oblivionco.com.br}"
       ALLOWED_ORIGINS: "${ALLOWED_ORIGINS:-https://oblivionco.com.br,https://www.oblivionco.com.br,https://oblivionco.pages.dev,http://localhost:8080,capacitor://localhost,https://localhost}"
       JWT_SECRET: "${JWT_SECRET:-TROQUE_POR_SEGREDO_FORTE_64_CHARS}"
@@ -69,6 +70,7 @@ services:
       - "443:443"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - /opt/conquer/downloads:/var/downloads:ro
       - caddy_data:/data
       - caddy_config:/config
     depends_on:
